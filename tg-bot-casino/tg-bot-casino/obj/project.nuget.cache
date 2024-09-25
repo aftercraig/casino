@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "tEj1FsLXfVoJFqTVEoCouix8YXUis0BXJ1w4lvzNH9v4PzO6OC3srIXp/RgJXAqONT5UgZ0PSD7u1C6KfbsO4g==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\IS22-11\\source\\repos\\tg-bot-casino\\tg-bot-casino\\tg-bot-casino.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\IS22-11\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
+    "C:\\Users\\IS22-11\\.nuget\\packages\\telegram.bot\\19.0.0\\telegram.bot.19.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
