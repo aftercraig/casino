@@ -14,7 +14,6 @@ class Programm
     private static int count = 0;
     public static void Main()
     {
-
         client = new TelegramBotClient(token);
         receiverOptions = new ReceiverOptions
         {
@@ -29,18 +28,14 @@ class Programm
 
         keyboard = new InlineKeyboardMarkup(
                                 new List<InlineKeyboardButton[]>()
-                                {
-                                        new InlineKeyboardButton[] // тут создаем массив кнопок
-                                        {
-                                            InlineKeyboardButton.WithUrl("Рандомайзер", "https://www.random.org/"),
-                                            InlineKeyboardButton.WithCallbackData("Ваше место", "button1"),
-                                        },
-                                        new InlineKeyboardButton[]
-                                        {
-                                            InlineKeyboardButton.WithCallbackData("Другие розыгрыши", "button2"),
-                                            InlineKeyboardButton.WithCallbackData("Результаты", "button3"),
-                                        },
-                                });
+        return new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("Участвовать", $"participate_{drawName}"),
+                InlineKeyboardButton.WithCallbackData("Отписаться", $"withdraw_{drawName}")
+            }
+        });
 
         Console.WriteLine($"Бот запущен!");
         Console.ReadLine();
@@ -48,66 +43,40 @@ class Programm
     }
 
 
-    private static async Task UpdateHandler(ITelegramBotClient client, Update update, CancellationToken token)
+private static async Task CheckWinner(ITelegramBotClient client, Draw draw)
     {
-        switch (update.Type)
+        if (draw.Participants.Any())
         {
-            case UpdateType.Message:
-                switch (update.Message.Text)
+            Random rand = new Random();
+            int winnerIndex = rand.Next(draw.Participants.Count);
+            string winnerName = draw.Participants[winnerIndex];
+            long winnerId = draw.ParticipantIds[winnerIndex];
+
+            string messageText = $"Поздравляем! Вы победитель розыгрыша '{draw.Name}'!";
+            await client.SendTextMessageAsync(winnerId, messageText);
+            foreach (var participantId in draw.ParticipantIds)
+            {
+                if (participantId != winnerId)
                 {
-                    case ("/start"):
-                        {
-                            await Console.Out.WriteLineAsync($"Пришло сообщение от пользователя: {update.Message.From.Username}");
-                            await client.SendTextMessageAsync(update.Message.From.Id, "Здравствуйте");
-
-                            break;
-                        }
-                    case ("/count"):
-                        {
-                            count++;
-                            break;
-
-                        }
-                    case ("/ping"):
-                        {
-                            await Console.Out.WriteLineAsync($"Пришло сообщение от пользователя: {update.Message.From.Username}");
-
-                            await client.SendTextMessageAsync(update.Message.From.Id, $"{count}");
-                            break;
-
-                        }
-                    case ("/keyboard"):
-                        {
-                            var inlineKeyboard = keyboard;
-                            await client.SendTextMessageAsync(update.Message.From.Id, $"Вот ваша клавиатура", replyMarkup: inlineKeyboard);
-                            break;
-
-                        }
+                    await client.SendTextMessageAsync(participantId, $"Вы не выиграли в розыгрыше '{draw.Name}'. Спасибо за участие!");
                 }
+            }
 
-                return;
+            string participantList = string.Join(", ", draw.Participants);
 
-            case UpdateType.CallbackQuery:
-                {
-                    var callbackQuery = update.CallbackQuery;
-                    var user = callbackQuery.From;
-                    var chat = callbackQuery.Message.Chat;
-                    switch (callbackQuery.Data)
-                    {
-                        case "button1":
-                            {
-                                await Console.Out.WriteLineAsync($"Пользователь нажал на кнопку btn1: {user.Username}");
-                                await client.EditMessageTextAsync(chat.Id, callbackQuery.Message.MessageId, "<b>Вы</b>", replyMarkup: keyboard, parseMode: ParseMode.Html);
-
-
-                                break;
-
-                            }
-                    }
-                }
-                return;
+            foreach (var participantId in draw.ParticipantIds)
+            {
+                await client.SendTextMessageAsync(participantId, $"Результаты розыгрыша '{draw.Name}\nПобедитель - {winnerName}.\n\n\nПолный список участников: {participantList}");
+            }
         }
-
+        else
+        {
+            string noParticipantsMessage = $"В розыгрыше '{draw.Name}' нет участников.";
+            foreach (var participantId in draw.ParticipantIds)
+            {
+                await client.SendTextMessageAsync(participantId, noParticipantsMessage);
+            }
+        }
     }
 
     private static Task ErrorHandler(ITelegramBotClient client, Exception exception, CancellationToken token)
